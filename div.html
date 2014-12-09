@@ -1,0 +1,135 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>test favorite</title>
+    <link href="Css/jquery-ui.css" rel="stylesheet" />
+    <link href="Css/fullcalendar.css" rel="stylesheet" />
+    <link href="Css/calendar.css" rel="stylesheet" />
+
+    <script src="Js/jquery-2.0.3.js"></script>
+    <script src="Js/jquery-ui.js"></script>
+    <script src="Js/moment.min.js"></script>
+    <script src="Js/jquery.common.js"></script>
+    <script src="Js/fullcalendar.js"></script>
+    <script>
+        //var gloTimeFormat = "YYYY-MM-DDTHH:mm";
+        //var gloDateFormat = "YYYY-MM-DD";
+        //var gloStringTimeFormat = "{0} {1} {2} {3}";
+        //var gloMomentFormat = "YYYY MM DD hh:mm";
+
+        //var date = new Date();
+        //var day = 1;
+        //var time = "9:30";
+        //var now = moment(date);
+        //var nowStr = gloStringTimeFormat.format(now.year(), now.month(), day, time);
+        //var str = moment(nowStr, gloMomentFormat).format(gloTimeFormat).toString();
+        //str = moment(nowStr, gloMomentFormat).format("YYYYMMDDhhmm").toString();
+        //alert(str);
+        //var date = new Date();
+        //var dayWrapper = moment(date);
+        //var str = dayWrapper.format(gloTimeFormat).toString();
+        //now = moment("2014 12 4 05:06", "YYYY MM DD hh:mm")
+        //str = "we see{0} and {1}";
+        //str = str.format("1", "5w");
+        //alert(str);
+        ////str = moment(now.year, now.month, 1, 9, 30).format(gloTimeFormat).toString();
+        //str = now.format(gloTimeFormat).toString();
+        //alert(str);
+        //now.days(dayWrapper.day);
+        //str = now.format(gloTimeFormat).toString();
+        //alert(str);
+
+        //var a = moment("2014=12-04");
+        //var b = moment("2014=12-05");
+        //var day = a.add(1, "days");
+        //alert(day);
+        //var array = new jQuery.uniqueArray();
+        //array.add(1);
+        //array.add(3);
+        //array.add(5);
+        //alert(array.contains(3));
+        //var html = '<div></div>';
+        //var htmlObj = $(html);
+        //html = '<p style="text-align: center;">name<input name="leipiNewField" type="text" guid="b9153905-3f3d-448e-80e9-ee2d6dd51514" title="name" value="" leipiplugins="text" orgrequire="1" orgalign="left" orgwidth="150" orgtype="text" style="text-align: left; width: 150px;"></p><p>second<input name="leipiNewField" type="text" guid="e9824dfc-77b9-47ff-92a4-19a85539bce4" title="second" value="" leipiplugins="text" orgrequire="0" orgalign="left" orgwidth="150" orgtype="text" style="text-align: left; width: 150px;"></p><p><input type="button" id="newTemplateSubmit" value="提交"></p>'
+        //htmlObj.append(html);
+        ////var htmlObj = $(html);
+        //alert(htmlObj.prop('outerHTML'));
+        //htmlObj.find("#newTemplateSubmit").before('<span id="third">ccc</span>');
+        //alert(htmlObj.html());
+        //htmlObj.find("#first").remove();
+        //alert(htmlObj.prop('outerHTML'));
+        //$(function () {
+        //    $(".dragDiv span").draggable({
+        //        helper: "clone",
+        //        appendTo: "#dropDiv"
+        //    });
+
+        //    $("#dropDiv").droppable({
+        //        drop: function (event, ui) {
+        //            alert(ui.helper.attr("name"));
+        //        },
+        //        tolerance: 'pointer'
+        //    });
+
+        //    //$("#dragDiv span").liveDraggable({
+        //    //    helper: "clone",
+        //    //    appendTo: "#dropDiv"
+        //    //});
+
+        //    //$("#dropDiv").liveDroppable({
+        //    //    drop: function (event, ui) {
+        //    //        alert(ui.helper.attr("name"));
+        //    //    },
+        //    //    tolerance: 'pointer'
+        //    //});
+
+        //});
+
+        //(function ($) {
+        //    $.fn.liveDraggable = function (opts) {
+        //        this.live("mouseover", function () {
+        //            if (!$(this).data("init")) {
+        //                $(this).data("init", true).draggable(opts);
+        //            }
+        //        });
+        //        return $();
+        //    };
+        //}(jQuery));
+
+        //(function ($) {
+        //    $.fn.liveDroppable = function (opts) {
+        //        this.live("mouseover", function () {
+        //            if (!$(this).data("init")) {
+        //                $(this).data("init", true).droppable(opts);
+        //            }
+        //        });
+        //        return $();
+        //    };
+        //}(jQuery));
+
+        function test() {
+            $("#dragDiv").append('<span name="span2">张二</span>');
+            $(".dragDiv span").draggable({
+                helper: "clone",
+                appendTo: "#dropDiv"
+            });
+        }
+        var now = new Date();
+        alert(now.getFullYear() + "--" + now.getMonth() + "--" + now.getDate());
+        //var mom = moment(now.year, now.month, now.day);
+    </script>
+</head>
+<body>
+    <div id="dragDiv" class="dragDiv" style="width:100px;height:200px;border:1px solid red;">
+        <span name="span1">张一</span>
+    </div>
+
+    <div style="width:200px;height:200px;border:1px solid green;float:left;">
+        <div id="dropDiv" class="dropDiv"  style="width:100px;height:100px; margin:10px;border:1px solid blue;">
+
+        </div>
+    </div>
+    <input type="button" value="test" id="favorites" onclick="test()" />
+</body>
+</html>

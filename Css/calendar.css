@@ -1,0 +1,28 @@
+﻿.leftdiv {width:100%;margin-top:30px;}
+.leftinnerdiv {width:95%; margin:0 auto;margin-top:20px;}
+.bgdiv{ display: none; position: absolute; top: 0%; left: 0%; width: 100%; height: 100%;  background-color: black;  z-index:100; -moz-opacity: 0.8; opacity:.80; filter: alpha(opacity=88);  } 
+.popupdiv { display: none; position: absolute; top: 25%; left: 25%; z-index:101;background-color: white;text-align:center;}
+.popupdiv table{width:90%;margin:0 auto;}
+
+
+/*for calendar control*/
+.fc-event-container a{border:2px solid #ffd800;border-radius:4px;}
+/*a.courseevent span.fc-time{background-color:gray;display:inline-block;width:60%;cursor:pointer;padding-right:0px;}
+a.courseevent span.fc-title{background-color:gray;display:inline-block;width:40%;cursor:pointer;padding-left:0px;}*/
+.teacherevent, .roomevent{background-color:transparent}
+a.roomevent {border-style:dashed;}
+a.teacherevent span.fc-time, a.roomevent span.fc-time{background-color:transparent;color:black;}
+a.teacherevent span.fc-title, a.roomevent span.fc-title{background-color:transparent;color:black;}
+
+a.courseevent div.teacherbg{width:50%;height:100%;left:0px;top:0px;position:absolute;display:inline-block;}
+a.courseevent div.roombg{width:50%;height:100%;right:0px;top:0px;position:absolute;display:inline-block;}
+
+div.teacherconflict, div.roomconflict, div.eventfinish{width:20px;height:20px;top:-15px;position:absolute;display:inline-block;}
+
+div.teacherconflict{background:url(../images/teacherconflict.jpg) no-repeat;background-size:contain;left:0px;}
+div.roomconflict{background:url(../images/roomconflict.png) no-repeat;background-size:contain;right:0px;}
+div.eventfinish{background:url(../images/course.jpg) no-repeat;background-size:contain;left:0px;}
+
+a.lesson{border-style:dashed;border-width:3px;}
+/*a.lesson.fc-event {background-color:transparent;}*/
+#teacherListDiv a{text-decoration: underline;color:blue;cursor:pointer;}

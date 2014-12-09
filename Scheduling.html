@@ -1,0 +1,327 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title></title>
+    <link href="Css/jquery-ui.css" rel="stylesheet" />
+    <link href="Css/fullcalendar.css" rel="stylesheet" />
+    <link href="Css/calendar.css" rel="stylesheet" />
+
+    <script src="Js/jquery-2.0.3.js"></script>
+    <script src="Js/jquery-ui.js"></script>
+    <script src="Js/moment.min.js"></script>
+    <script src="Js/jquery.mtz.monthpicker.js"></script>
+    <script src="Js/jquery.common.js"></script>
+    <script src="Js/fullcalendar.js"></script>
+    <script src="Js/scheduling.js"></script>
+</head>
+<body>
+    <div style="width:1360px;height:100%;">
+        <div style="width:240px;height:100%;float:left">
+            <div class="leftdiv">
+                <input type="button" value="增加课程" onclick="showPopup('addCourseDiv');" />
+                <input type="button" value="删除课程" onclick="removeCoursesPopup();" />  
+                <!--<input type="button" value="Test" onclick="test();" />-->         
+            </div>
+            <div class="leftdiv">
+                <div class="leftinnerdiv">
+                    <span>课程</span>
+                    <span style="float:right"><input type="button" value="增加课程" onclick="addLessonBtnClick();" /></span>
+                </div>
+                <div id="lessonListDiv" class="leftinnerdiv">
+                    
+                </div>
+            </div>
+            <div class="leftdiv">
+                <div class="leftinnerdiv">
+                    <span>教师</span>
+                    <span style="float:right"><input type="button" value="增加教师" onclick="addTeacherBtnClick();" /></span>
+                </div>
+                <div id="teacherListDiv" class="leftinnerdiv">
+                    
+                </div>
+            </div>
+            <div class="leftdiv" style="clear:both;">
+                <div class="leftinnerdiv">
+                    <span>教室</span>
+                    <span style="float:right"><input type="button" value="增加教室" onclick="addRoomBtnClick();" /></span>
+                    <div id="roomListDiv" class="leftinnerdiv">                        
+                    </div>
+                </div>
+            </div>
+
+            <div id="divMonth" class="leftdiv">
+                <span class="date_span1">选择月份：<input type="hidden" id="hidMonth" /></span>
+            </div>
+
+            <div class="leftdiv" style="clear:both;">
+                <table>
+                    <tr>
+                        <td>总课时</td><td><input style="width:50px;" value="100" /></td>
+                    </tr>                    
+                </table>
+            </div>
+            
+        </div>
+        <div style="float:left;">
+            <div id="calendar" style="width:1100px;clear:both;"></div>
+        </div>
+    </div>
+
+    <div id="addCourseDiv" class="popupdiv" style="width:700px;height:400px;">
+        <table>
+            <tr>
+                <td colspan="4">
+                    <p>增加课程</p>
+                </td>
+            </tr>
+            <tr>
+                <td>开始日期</td>
+                <td><input type="text" id="addCourseBeginDate" /></td>
+                <td>结束日期</td>
+                <td><input type="text" id="addCourseEndDate" /></td>
+            </tr>
+            <tr>
+                <td colspan="4" id="courseWeekCheckbox">
+                    <input type="checkbox" value="1" />星期一
+                    <input type="checkbox" value="2" />星期二
+                    <input type="checkbox" value="3" />星期三
+                    <input type="checkbox" value="4" />星期四
+                    <input type="checkbox" value="5" />星期五
+                    <input type="checkbox" value="6" />星期六
+                    <input type="checkbox" value="0" />星期天
+                </td>
+            </tr>
+            <tr>
+                <td>开始时间</td>
+                <td><input type="text" id="addCourseStartTime1" value="09:30" /></td>
+                <td>结束时间</td>
+                <td><input type="text" id="addCourseEndTime1" value="11:30" /></td>
+            </tr>
+            <tr>
+                <td>开始时间</td>
+                <td><input type="text" id="addCourseStartTime2" /></td>
+                <td>结束时间</td>
+                <td><input type="text" id="addCourseEndTime2" /></td>
+            </tr>
+            <tr>
+                <td>开始时间</td>
+                <td><input type="text" id="addCourseStartTime3" /></td>
+                <td>结束时间</td>
+                <td><input type="text" id="addCourseEndTime3" /></td>
+            </tr>
+            <tr>
+                <td>校区</td>
+                <td><input type="text" id="addCourseSchool" /></td>
+                <td>课程</td>
+                <td>
+                    <select style="width:100px;" id="addCourseLessonSelect">
+                        <option value="0">请选择</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>教师</td>
+                <td style="width:200px;">
+                    <select style="width:100px;" id="addCourseTeacherSelect">
+                        <option value="0">请选择</option>
+                    </select>
+                    <select style="width:73px;" id="addCourseTeacherFlagSelect">
+                        <option value="0">请选择</option>
+                    </select>
+                </td>
+                <td>教室</td>
+                <td><select style="width:173px;" id="addCourseRoomSelect"><option value="0">请选择</option></select></td>
+            </tr>
+            <tr>
+                <td>授课内容</td>
+                <td><input type="text" /></td>
+                <td>课标</td>
+                <td><input type="text" /></td>
+            </tr>
+            <tr>
+                <td>课时</td>
+                <td><input type="text" /></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td colspan="4" style="text-align:center">
+                    <input style="margin-top:30px;" type="button" value="确定" onclick="addCourses();" />
+                    <input style="margin-top:30px;" type="button" value="取消" onclick="closePopup('addCourseDiv');" /></td>
+            </tr>
+        </table>
+    </div>
+
+    <div id="deleteCourseDiv" class="popupdiv" style="width:700px;height:500px;">
+        <p>删除课程</p>
+        <table id="deleteCourseTable">            
+            <tr>
+                <td>选择</td>
+                <td>开始时间</td>
+                <td>结束时间</td>
+                <td>课程</td>
+                <td>教师</td>
+                <td>教室</td>
+                <td>课时</td>
+                <td>课标</td>
+            </tr>
+        </table>
+        <table>
+            <tr>
+                <td style="text-align:center">
+                    <input style="margin-top:30px;" type="button" value="确定" onclick="removeCourses();" />
+                    <input style="margin-top:30px;" type="button" value="取消" onclick="closePopup('deleteCourseDiv');" />
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div id="addLessonDiv" class="popupdiv" style="width:400px;height:500px;">
+        <p>增加课程</p>
+        <table id="lessonTable">            
+            <tr>
+                <td>选择</td>
+                <td>课程名称</td>
+            </tr>
+        </table>
+        <table>
+            <tr>
+                <td style="text-align:center">
+                    <input style="margin-top:30px;" type="button" value="确定" onclick="addLesson(); closePopup('addLessonDiv');" />
+                    <input style="margin-top:30px;" type="button" value="取消" onclick="closePopup('addLessonDiv');" />
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div id="addTeacherDiv" class="popupdiv" style="width:450px;height:500px;">
+        <p>增加教师</p>
+        <table id="teacherTable">            
+            <tr>
+                <td>选择</td>
+                <td>教师名称</td>
+                <td>课标</td>
+                <td>授课内容</td>
+            </tr>
+        </table>
+        <table>
+            <tr>
+                <td style="text-align:center">
+                    <input style="margin-top:30px;" type="button" value="确定" onclick="addTeacher();closePopup('addTeacherDiv');" />
+                    <input style="margin-top:30px;" type="button" value="取消" onclick="closePopup('addTeacherDiv');" />
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div id="addClassroomDiv" class="popupdiv" style="width:400px;height:300px;">
+        <p>增加教室</p>
+        <table id="roomTable">            
+            <tr>
+                <td>选择</td>
+                <td>教室名称</td>
+                <td>所属区域</td>
+            </tr>
+        </table>
+        <table>
+            <tr>
+                <td colspan="2" style="text-align:center">
+                    <input style="margin-top:30px;" type="button" value="确定" onclick="addRoom();closePopup('addClassroomDiv');" />
+                    <input style="margin-top:30px;" type="button" value="取消" onclick="closePopup('addClassroomDiv');" />
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div id="schedulingSelectDiv" class="popupdiv" style="width:300px;height:300px;border:1px solid #000000" onclick="event.stopPropagation();">
+        <div style="width:100%;">
+            <p>定制课程</p>
+            <table>
+                <tr>
+                    <td>开始时间：</td>
+                    <td><input type="text" id="setSchedulingStart" style="width:80px;" /></td>
+                    <td>课时：</td>
+                    <td><input type="text" style="width:30px;" /></td>
+                </tr>
+                <tr>
+                    <td>结束时间：</td>
+                    <td><input type="text" id="setSchedulingEnd" style="width:80px;" /></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </table>
+        </div>
+        <div>
+            <table>
+                <tr>
+                    <td>校区</td>
+                    <td><input type="text" id="schedulingSchool" /></td>
+                </tr>
+            </table>
+        </div>
+        <div>
+            <table>
+                <tr>
+                    <td>选择课程</td>
+                    <td>
+                        <select id="schedulingLesson">
+                            <option value="0">请选择</option>
+                        </select>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div>
+             <table>
+                <tr>
+                    <td>选择教师</td>
+                    <td>
+                        <select id="schedulingTeacher">
+                            <option value="0">请选择</option>
+                        </select>
+                    </td>
+                </tr>
+            </table>
+        </div>
+       <div>
+             <table>
+                <tr>
+                    <td>选择教室</td>
+                    <td>
+                        <select id="schedulingRoom">
+                            <option value="0">请选择</option>
+                        </select>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div style="clear:both;width:100%;margin-top:20px;text-align:center;">
+            <input type="button" value="确定" onclick="setScheduling(); closePopup('schedulingSelectDiv');" />
+            <input type="button" value="取消" onclick="closeScheduling();" />
+        </div>
+    </div>
+
+    <div id="teacherDetailDiv" class="popupdiv" style="width:300px;height:120px;border:1px solid #000000" onclick="event.stopPropagation();">
+        <table style="text-align:left;">
+            <tr>
+                <td style="width:40%;">姓名:</td>
+                <td style="width:60%;"><span id="teacherDetailNameSpan"></span></td>
+            </tr>
+            <tr>
+                <td>课标:</td>
+                <td><select id="teacherDetailFlagSelect"><option value="0">请选择</option></select></td>
+            </tr>
+            <tr>
+                <td>授课内容:</td>
+                <td><input id="teacherDetailContentText" /></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td><input type="button" onclick="teacherDetailSubmit();" value="确定" /></td>
+            </tr>
+        </table>
+    </div>
+    <div id="bgDiv" class="bgdiv"></div>   
+</body>
+</html>
