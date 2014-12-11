@@ -143,6 +143,7 @@ function changeTeacher(teacherId, event) {
         var teacher = gloTeacherHash.get(teacherId);
         event.teacherId = teacher.id;
         event.teacherColor = teacher.color;
+        event.showTeacher = teacher.show;
 
         if (gloTeacherCourseIdHash.containsKey(teacher.id)) {
             teacherCourseArray = gloTeacherCourseIdHash.get(teacher.id);
@@ -175,6 +176,7 @@ function changeRoom(roomId, event) {
         event.roomId = room.id;
         event.title = room.school;
         event.roomColor = room.color;
+        event.showRoom = room.show;
 
         if (gloRoomCourseIdHash.containsKey(room.id)) {
             roomCourseArray = gloRoomCourseIdHash.get(room.id);
@@ -569,6 +571,8 @@ function removeEvents(id, eventFlag) {
     eventFlag = eventFlag || '';
     var eventId = '';
     if ('' == eventFlag) {
+        var teacher = gloTeacherHash.get(id);
+        teacher.show = false;
         if (gloTeacherEventHash.containsKey(id)) {
             eventId = id;
         }
@@ -586,6 +590,9 @@ function removeEvents(id, eventFlag) {
         }
 
     } else if ("room" == eventFlag) {
+        var room = gloRoomHash.get(id);
+        room.show = false;
+
         if (gloRoomEventHash.containsKey(id)) {
             eventId = id;
         }
