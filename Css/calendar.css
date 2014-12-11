@@ -4,6 +4,19 @@
 .popupdiv { display: none; position: absolute; top: 25%; left: 25%; z-index:101;background-color: white;text-align:center;}
 .popupdiv table{width:90%;margin:0 auto;}
 
+/*a.lesson{border-style:dashed;border-width:3px;}*/
+/*a.lesson.fc-event {background-color:transparent;}*/
+#teacherListDiv a{text-decoration: underline;color:blue;cursor:pointer;}
+#schedulingSelectDiv select{width:80px;}
+#lessonListTable{border-collapse:collapse;}
+#lessonListTable td{border:1px solid black;text-align:center}
+#lessonListTable .img{width:18px;height:18px;}
+#lessonListTable .hidediv{display:none;}
+.lessondropdiv {text-align:left;}
+.lessondropdiv p{margin:5px;}
+#lessonListDiv, #teacherListDiv, #roomListDiv {max-height:135px;overflow-y:auto;}
+.removeteacher, .removeroom{cursor:pointer}
+
 
 /*for calendar control*/
 .fc-event-container a{border:2px solid #ffd800;border-radius:4px;}
@@ -17,12 +30,10 @@ a.teacherevent span.fc-title, a.roomevent span.fc-title{background-color:transpa
 a.courseevent div.teacherbg{width:50%;height:100%;left:0px;top:0px;position:absolute;display:inline-block;}
 a.courseevent div.roombg{width:50%;height:100%;right:0px;top:0px;position:absolute;display:inline-block;}
 
-div.teacherconflict, div.roomconflict, div.eventfinish{width:20px;height:20px;top:-15px;position:absolute;display:inline-block;}
+div.teacherconflict, div.roomconflict, div.eventfinish, div.eventuncomplete{width:20px;height:20px;top:-15px;position:absolute;display:inline-block;}
 
 div.teacherconflict{background:url(../images/teacherconflict.jpg) no-repeat;background-size:contain;left:0px;}
 div.roomconflict{background:url(../images/roomconflict.png) no-repeat;background-size:contain;right:0px;}
 div.eventfinish{background:url(../images/course.jpg) no-repeat;background-size:contain;left:0px;}
+div.eventuncomplete{background:url(../images/uncomplete.png) no-repeat;background-size:contain;left:0px;}
 
-a.lesson{border-style:dashed;border-width:3px;}
-/*a.lesson.fc-event {background-color:transparent;}*/
-#teacherListDiv a{text-decoration: underline;color:blue;cursor:pointer;}

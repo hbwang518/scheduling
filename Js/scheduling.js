@@ -10,23 +10,27 @@ var gloStringTimeFormat = "{0}-{1}-{2} {3}";
 var gloMomentFormat = "YYYY-MM-DD hh:mm";
 var gloMinuteFormat = "YYYYMMDDhhmm";
 var gloDateTimeFormat = "hh:mm";
-var gloEvents = new Array();
+var gloInitEvents = new Array();
 var gloTeachers = new Array();
 var gloRooms = new Array();
 var gloLessons = new Array();
 var gloCourses = new Array();
 var gloEvent = null;
 var gloCalEvent = null;
-var gloCourseHash = new jQuery.hashtable();
-var gloEventHash = new jQuery.hashtable();
+//id and object is the key and value
 var gloTeacherHash = new jQuery.hashtable();
 var gloRoomHash = new jQuery.hashtable();
 var gloLessonHash = new jQuery.hashtable();
 
-// teacher list and room list
+//id and object is the key and value
+var gloCourseHash = new jQuery.hashtable();
+
+// the selected id and obj is the key and value
 var gloSelectTeacherHash = new jQuery.hashtable();
 var gloSelectRoomHash = new jQuery.hashtable();
 var gloSelectLessonHash = new jQuery.hashtable();
+
+//select array
 var gloTeacherColorArray = ["#ff0000", "#ffff00", "#008000", "#0000ff"];
 var gloTeacherColorNameArray = ["红色", "黄色", "绿色", "蓝色"];
 var gloTeacherFlagNameArray = ['雅思', '托福'];
@@ -35,15 +39,18 @@ var gloRoomColorNameArray = ["橙色", "青色", "棕色", "褐色"];
 var gloLessonColorArray = ["#ff8c00", "#7fff00", "#8b4513", "#92cd32"];
 var gloLessonColorNameArray = ["橙色", "青色", "棕色", "褐色"];
 
-//global relationship
-var gloTeacherCourseHash = new jQuery.hashtable();
-var gloRoomCourseHash = new jQuery.hashtable();
-var gloLessonCourseHash = new jQuery.hashtable();
-var gloEventBorderColor = '';
-var gloTeacherEventHash = new jQuery.hashtable();
-var gloRoomEventHash = new jQuery.hashtable();
-var gloLessonEventHash = new jQuery.hashtable();
+//global relationship the id and course id array is the key and value
+var gloTeacherCourseIdHash = new jQuery.hashtable();
+var gloRoomCourseIdHash = new jQuery.hashtable();
+var gloLessonCourseIdHash = new jQuery.hashtable();
 
+//teacher event is that event the teacher cannot be assigned course. Teacher id and event id array is the key and value
+var gloTeacherEventHash = new jQuery.hashtable();
+//room event is that event the room cannot be assigned course. Room id and event id array is the key and value
+var gloRoomEventHash = new jQuery.hashtable();
+
+
+var gloEventBorderColor = '';
 //for teacher infomation modification
 var gloTeacherId = "";
 
@@ -69,6 +76,7 @@ var draggableParams = {
     helper: "clone",
     zIndex: 200,
     cursor: "pointer",
+    cancel: ".nodraggable",
     snap: true
 }
 
@@ -78,7 +86,7 @@ var droppableParams = {
 }
 
 function test() {
-    var event = gloEvents[0];
+    var event = gloInitEvents[0];
     var clientEvents = $("#calendar").fullCalendar('clientEvents', event.id);
     if (clientEvents.length > 0) {
         var event = clientEvents[0];
@@ -92,6 +100,9 @@ function drop(event, ui) {
     var eventId = $(this).attr("name");
     var clientEvents = $("#calendar").fullCalendar('clientEvents', eventId);
     var event = clientEvents[0];
+
+    var oldLessonId = event.lessonId || '';    
+
     if (name.indexOf("teacher") == 0) {
         var teacherId = name.substr("teacher".length);
         changeTeacher(teacherId, event);
@@ -102,104 +113,118 @@ function drop(event, ui) {
         var lessonId = name.substr("lesson".length);
         changeLesson(lessonId, event);
     }
+    var lessonId = event.lessonId || '';
+    if ('' != oldLessonId) { //refresh old lesson
+        refreshLessonDropDiv(gloLessonHash.get(oldLessonId));
+    }
+    if ('' != lessonId) { //refresh new lesson
+        refreshLessonDropDiv(gloLessonHash.get(lessonId));
+    }
     findConflictForEvent(event)
     $("#calendar").fullCalendar('updateEvent', event);
     droppable();
 }
 
 function changeTeacher(teacherId, event) {    
-    if (teacherId == event.teacherId) {
-        return;
-    }
-
     var teacherCourseArray = null;
+    var course = gloCourseHash.get(event.id);
     if ('' != event.teacherId) {
-        //remove course from gloTeacherCourseHash
-        teacherCourseArray = gloTeacherCourseHash.get(event.teacherId);
-        for (var i = 0; i < teacherCourseArray.length; i++) {
-            if (teacherCourseArray[i].id == event.id) {
-                teacherCourseArray.splice(i, 1);
-                break;
-            }
-        }
+        //remove course from gloTeacherCourseIdHash
+        teacherCourseArray = gloTeacherCourseIdHash.get(event.teacherId);
+        teacherCourseArray.remove(course.id);
     }
-    var teacher = gloTeacherHash.get(teacherId);
-    event.teacherId = teacher.id;
-    event.teacherColor = teacher.color;
     
-    if (gloTeacherCourseHash.containsKey(teacher.id)) {
-        teacherCourseArray = gloTeacherCourseHash.get(teacher.id);
-    } else {
-        teacherCourseArray = new Array();
-        gloTeacherCourseHash.add(teacher.id, teacherCourseArray);
+    if ('0' == teacherId) {
+        event.teacherId = '';
+        event.teacherColor = '';
+        course.teacherId = '';
     }
-    course = gloCourseHash.get(event.id);
-    course.teacherId = teacher.id;
-    teacherCourseArray.push(course);
+    else {
+        var teacher = gloTeacherHash.get(teacherId);
+        event.teacherId = teacher.id;
+        event.teacherColor = teacher.color;
+
+        if (gloTeacherCourseIdHash.containsKey(teacher.id)) {
+            teacherCourseArray = gloTeacherCourseIdHash.get(teacher.id);
+        } else {
+            teacherCourseArray = new jQuery.uniqueArray();
+            gloTeacherCourseIdHash.add(teacher.id, teacherCourseArray);
+        }
+        course.teacherId = teacherId;
+        teacherCourseArray.add(course.id);
+    }
 }
 
 function changeRoom(roomId, event) {
-    if (roomId == event.roomId) {
-        return;
-    }
-
     var roomCourseArray = null;
+    var course = gloCourseHash.get(event.id);
     if ('' != event.roomId) {
-        //remove course from gloRoomCourseHash
-        roomCourseArray = gloRoomCourseHash.get(event.roomId);
-        for (var i = 0; i < roomCourseArray.length; i++) {
-            if (roomCourseArray[i].id == event.id) {
-                roomCourseArray.splice(i, 1);
-                break;
-            }
-        }
+        //remove course from gloRoomCourseIdHash
+        roomCourseArray = gloRoomCourseIdHash.get(event.roomId);
+        roomCourseArray.remove(course.id);
     }
-    var room = gloRoomHash.get(roomId);
-    event.roomId = room.id;
-    event.roomColor = room.color;
+    
+    if ('0' == roomId) {
+        event.roomId = '';
+        event.roomColor = '';
+        event.title = '';
+        course.roomId = '';
+    }
+    else {
+        var room = gloRoomHash.get(roomId);
+        event.roomId = room.id;
+        event.title = room.school;
+        event.roomColor = room.color;
 
-   
-    if (gloRoomCourseHash.containsKey(room.id)) {
-        roomCourseArray = gloRoomCourseHash.get(room.id);
-    } else {
-        roomCourseArray = new Array();
-        gloRoomCourseHash.add(room.id, roomCourseArray);
+        if (gloRoomCourseIdHash.containsKey(room.id)) {
+            roomCourseArray = gloRoomCourseIdHash.get(room.id);
+        } else {
+            roomCourseArray = new jQuery.uniqueArray();
+            gloRoomCourseIdHash.add(room.id, roomCourseArray);
+        }
+        course.roomId = roomId;
+        roomCourseArray.add(course.id);
     }
-    course = gloCourseHash.get(event.id);
-    course.roomId = room.id;
-    roomCourseArray.push(course);
+}
+
+function schedulingRoomChange() {
+    var roomId = $("#schedulingRoom").val();
+    if ('0' == roomId) {
+        $("#schedulingSchool").html('');
+    } else {
+        var room = gloRoomHash.get(roomId);
+        $("#schedulingSchool").html(room.school);
+    }
 }
 
 function changeLesson(lessonId, event) {
-    if (lessonId == event.lessonId) {
-        return;
-    }
-
     var lessonCourseArray = null;
+    var course = gloCourseHash.get(event.id);
     if ('' != event.lessonId) {
-        //remove course from gloLessonCourseHash
-        lessonCourseArray = gloLessonCourseHash.get(event.lessonId);
-        for (var i = 0; i < lessonCourseArray.length; i++) {
-            if (lessonCourseArray[i].id == event.id) {
-                lessonCourseArray.splice(i, 1);
-                break;
-            }
+        //remove course from gloLessonCourseIdHash
+        lessonCourseArray = gloLessonCourseIdHash.get(event.lessonId);
+        lessonCourseArray.remove(course.id);
+    }
+    
+    if ('0' == lessonId) {
+        event.lessonId = '';
+        event.lessonColor = '';
+        course.lessonId = '';
+    }
+    else {
+        var lesson = gloLessonHash.get(lessonId);
+        event.lessonId = lesson.id;
+        event.lessonColor = lesson.color;
+
+        if (gloLessonCourseIdHash.containsKey(lesson.id)) {
+            lessonCourseArray = gloLessonCourseIdHash.get(lesson.id);
+        } else {
+            lessonCourseArray = new jQuery.uniqueArray();
+            gloLessonCourseIdHash.add(lesson.id, lessonCourseArray);
         }
+        course.lessonId = lesson.id;
+        lessonCourseArray.add(course.id);
     }
-    var lesson = gloLessonHash.get(lessonId);
-    event.lessonId = lesson.id;
-    event.lessonColor = lesson.color;
-
-
-    if (gloLessonCourseHash.containsKey(lesson.id)) {
-        lessonCourseArray = gloLessonCourseHash.get(lesson.id);
-    } else {
-        lessonCourseArray = new Array();
-        gloLessonCourseHash.add(lesson.id, lessonCourseArray);
-    }
-    course = gloCourseHash.get(event.id);
-    course.lessonId = lesson.id;
-    lessonCourseArray.push(course);
 }
 
 function findConflictForEvent(event) {
@@ -246,40 +271,49 @@ function findConflictForEvent(event) {
 function setScheduling() {
     var startTime = $("#setSchedulingStart").val();
     var endTime = $("#setSchedulingEnd").val();
-    var school = $("#schedulingSchool").val();
 
     gloCalEvent.start = getEventTime(gloCalEvent.start.format(gloDateFormat).toString(), startTime);
     gloCalEvent.end = getEventTime(gloCalEvent.start.format(gloDateFormat).toString(), endTime);
-
+    var oldLessonId = gloCalEvent.lessonId || '';
     var teacherId = $("#schedulingTeacher").val();
-    if ("0" != teacherId && teacherId != gloCalEvent.teacherId) {
+    if (teacherId != gloCalEvent.teacherId) {
         changeTeacher(teacherId, gloCalEvent);
     }
 
     var roomId = $("#schedulingRoom").val();
-    if ("0" != roomId && roomId != gloCalEvent.roomId) {
+    if (roomId != gloCalEvent.roomId) {
         changeRoom(roomId, gloCalEvent);
     }
     var lessonId = $("#schedulingLesson").val();
-    if ("0" != lessonId && lessonId != gloCalEvent.lessonId) {
+    if (lessonId != gloCalEvent.lessonId) {
         changeLesson(lessonId, gloCalEvent);
     }
 
     var course = gloCourseHash.get(gloCalEvent.id);
-    course.school = school;
-    gloCalEvent.title = school;
     course.start = gloCalEvent.start;
     course.end = gloCalEvent.end;
     course.teacherId = gloCalEvent.teacherId;
     course.roomId = gloCalEvent.roomId;
+    
     course.lessonId = gloCalEvent.lessonId;
-
+    
+    if ('' != $("#setSchedulingHour").val()) {
+        course.hour = $("#setSchedulingHour").val();
+    }
     findConflictForEvent(gloCalEvent);
 
     $("#calendar").fullCalendar('updateEvent', gloCalEvent);
 
     gloEventBorderColor = gloEvent.css('border-color');
-    gloEvent.css('border-color', 'yellow');   
+    gloEvent.css('border-color', 'yellow');
+
+    if ('' != oldLessonId) { //refresh old lesson
+        refreshLessonDropDiv(gloLessonHash.get(oldLessonId));
+    }
+    if ('' != course.lessonId) { //refresh new lesson
+        refreshLessonDropDiv(gloLessonHash.get(course.lessonId));
+    }
+    droppable();
 }
 
 function closeScheduling() {
@@ -317,7 +351,7 @@ function eventClick(calEvent, jsEvent, view) {
     //set dom value
     $("#setSchedulingStart").val(calEvent.start.format(gloDateTimeFormat).toString());
     $("#setSchedulingEnd").val(calEvent.end.format(gloDateTimeFormat).toString());
-    $("#schedulingSchool").val(calEvent.title || '');
+    $("#schedulingSchool").html(calEvent.title || '');
 
     var teacherId = calEvent.teacherId || '';
     if ('' != teacherId) {
@@ -326,6 +360,8 @@ function eventClick(calEvent, jsEvent, view) {
 
     var roomId = calEvent.roomId || '';
     if ('' != roomId) {
+        var room = gloRoomHash.get(roomId);
+        $("#schedulingSchool").html(room.school);
         $("#schedulingRoom").val(roomId);
     }
 
@@ -359,52 +395,71 @@ function loadSchedulingElement() {
     $("#schedulingLesson").val(0);
 }
 
-function addTeacher() {
+function addTeacherSubmit() {
     var checkboxs = $("#teacherTable").find("input[type=checkbox]:checked");
     $(checkboxs).each(function (index, element) {
         var teacher = gloTeacherHash.get($(this).val());
-        teacher.color = getColorForTeacher();
         teacher.flag = $("#teacherTable").find('select[name=' + $(this).val() + ']').val();
         teacher.content = $("#teacherTable").find('input[name=' + $(this).val() + ']').val();
-        addTeacherToDom(teacher);
-        gloSelectTeacherHash.add(teacher.id, teacher);
+        addTeacher(teacher);
     });
     $("#teacherListDiv span.draggable").draggable(draggableParams);
 }
 
-function addRoom() {
+function addTeacher(teacher) {
+    teacher.color = getColorForTeacher();
+    addTeacherToDom(teacher);
+    gloSelectTeacherHash.add(teacher.id, teacher);
+}
+
+function addRoomSubmit() {
     var checkboxs = $("#roomTable").find("input[type=checkbox]:checked");
     $(checkboxs).each(function (index, element) {
-        var room = null;
-        for (var i = 0; i < gloRooms.length; i++) {
-            if (gloRooms[i].id == $(this).val()) {
-                room = gloRooms[i];
-                room.color = getColorForRoom();
-            }
-        }
-        if (null != room) {
-            addRoomToDom(room);
-            gloSelectRoomHash.add(room.id, room);
-        }
+        var room = gloRoomHash.get($(this).val());
+        addRoom(room);
     });
     $("#roomListDiv span.draggable").draggable(draggableParams);
 }
 
+function addRoom(room) {
+    room.color = getColorForRoom();
+    addRoomToDom(room);
+    gloSelectRoomHash.add(room.id, room);
+}
+
 function addLesson() {
     var checkboxs = $("#lessonTable").find("input[type=checkbox]:checked");
-    $(checkboxs).each(function (index, element) {
-        var lesson = null;
-        for (var i = 0; i < gloLessons.length; i++) {
-            if (gloLessons[i].id == $(this).val()) {
-                lesson = gloLessons[i];
-                lesson.color = getColorForLesson();
+    var eventArray = new Array();
+    $(checkboxs).each(function (index, element) {       
+        lesson = gloLessonHash.get($(this).val());
+        lesson.color = getColorForLesson();
+
+        gloSelectLessonHash.add(lesson.id, lesson);
+        if (!gloLessonCourseIdHash.containsKey(lesson.id)) {
+            gloLessonCourseIdHash.add(lesson.id, new jQuery.uniqueArray());
+        } else {
+            //load lesson courses and load the teachers, rooms related with the courses 
+            
+            var courseIdArray = gloLessonCourseIdHash.get(lesson.id);
+            for (var i = 0; i < courseIdArray.size() ; i++) {
+                var course = gloCourseHash.get(courseIdArray.get(i));
+                if ('' != course.teacherId && !gloSelectTeacherHash.containsKey(course.teacherId)) {
+                    addTeacher(gloTeacherHash.get(course.teacherId));
+                }
+
+                if ('' != course.roomId && !gloSelectRoomHash.containsKey(course.roomId)) {
+                    addRoom(gloRoomHash.get(course.roomId));
+                }
+                eventArray.push(createNewEventByCourse(course));
             }
         }
-        if (null != lesson) {
-            addLessonToDom(lesson);
-            gloSelectLessonHash.add(lesson.id, lesson);
-        }
+        addLessonToDom(lesson);
     });
+
+    $('#calendar').fullCalendar('addEventSource', eventArray);
+    droppable();
+    $("#teacherListDiv span.draggable").draggable(draggableParams);
+    $("#roomListDiv span.draggable").draggable(draggableParams);
     $("#lessonListDiv span.draggable").draggable(draggableParams);
 }
 
@@ -433,61 +488,128 @@ function lessonSelected(_this) {
     var value = $(_this).val();
     if ($(_this).is(':checked')) {
         addEvents($(_this).val(), 'lesson');
+        $("span[name=lesson" + $(_this).val() + "]").removeClass("nodraggable");
     }
     else {
         removeEvents($(_this).val(), 'lesson');
+        $("span[name=lesson" + $(_this).val() + "]").addClass("nodraggable");
     }
 }
 
-function addEvents(id, isteacher) {
-    isteacher = isteacher || '';
+function addEvents(id, eventFlag) {
+    eventFlag = eventFlag || '';
 
     var source = [];
-    if ('' == isteacher) {
+    if ('' == eventFlag) {
+        var teacher = gloTeacherHash.get(id);
+        teacher.show = true;
         if (gloTeacherEventHash.containsKey(id)) {
-            source = gloTeacherEventHash.get(id);
-            var teacher = gloTeacherHash.get(id);
+            source = gloTeacherEventHash.get(id);            
             for (var i = 0; i < source.length; i++) {
                 source[i].title = teacher.name;
                 source[i].teacherColor = teacher.color;
             }
         }
-    } else if ('room' == isteacher) {
+
+        if (gloTeacherCourseIdHash.containsKey(id)) {
+            var courseIdArray = gloTeacherCourseIdHash.get(id);
+            for (var i = 0; i < courseIdArray.items.length; i++) {
+                var clientEvents = $("#calendar").fullCalendar('clientEvents', courseIdArray.get(i));
+                if (clientEvents.length > 0) {
+                    var event = clientEvents[0];
+                    event.showTeacher = true;
+                    findConflictForEvent(event);
+                    $("#calendar").fullCalendar('updateEvent', event);
+                }
+            }
+        }
+
+
+    } else if ('room' == eventFlag) {
+        var room = gloRoomHash.get(id);
+        room.show = true;
         if (gloRoomEventHash.containsKey(id)) {
             source = gloRoomEventHash.get(id);
-            var room = gloRoomHash.get(id);
             for (var i = 0; i < source.length; i++) {
                 source[i].title = room.name;
                 source[i].roomColor = room.color;
             }
         }
-    } else {
-        if (gloLessonEventHash.containsKey(id)) {
-            source = gloLessonEventHash.get(id);
-            var lesson = gloLessonHash.get(id);
-            for (var i = 0; i < source.length; i++) {
-                source[i].title = lesson.name;
-                source[i].lessonColor = lesson.color;
+
+        if (gloRoomCourseIdHash.containsKey(id)) {
+            var courseIdArray = gloRoomCourseIdHash.get(id);
+            for (var i = 0; i < courseIdArray.items.length; i++) {
+                var clientEvents = $("#calendar").fullCalendar('clientEvents', courseIdArray.get(i));
+                if (clientEvents.length > 0) {
+                    var event = clientEvents[0];
+                    event.showRoom = true;
+                    findConflictForEvent(event);
+                    $("#calendar").fullCalendar('updateEvent', event);
+                }
             }
         }
     }
+    else if ('lesson' == eventFlag) {
+        // add event for lesson
+        if (gloLessonCourseIdHash.containsKey(id)) {
+            var courseIdArray = gloLessonCourseIdHash.get(id);
+            for (var i = 0; i < courseIdArray.size() ; i++) {
+                var event = createNewEventByCourse(gloCourseHash.get(courseIdArray.get(i)));
+                findConflictForEvent(event);
+                source.push(event);
+            }
+        }
+    }
+
     $('#calendar').fullCalendar('addEventSource', source);
     droppable();
 }
 
-function removeEvents(id, isteacher) {
-    isteacher = isteacher || '';
+function removeEvents(id, eventFlag) {
+    eventFlag = eventFlag || '';
     var eventId = '';
-    if ('' == isteacher) {
+    if ('' == eventFlag) {
         if (gloTeacherEventHash.containsKey(id)) {
             eventId = id;
         }
-    } else {
+        $('#calendar').fullCalendar('removeEvents', id);
+
+        //
+        var courseIdArray = gloTeacherCourseIdHash.get(id);
+        for (var i = 0; i < courseIdArray.size() ; i++) {
+            var clientEvents = $("#calendar").fullCalendar('clientEvents', courseIdArray.get(i));
+            if (clientEvents.length > 0) {
+                var event = clientEvents[0];
+                event.showTeacher = false;
+                $("#calendar").fullCalendar('updateEvent', event);
+            }
+        }
+
+    } else if ("room" == eventFlag) {
         if (gloRoomEventHash.containsKey(id)) {
             eventId = id;
         }
+        $('#calendar').fullCalendar('removeEvents', id);
+
+        var courseIdArray = gloRoomCourseIdHash.get(id);
+        for (var i = 0; i < courseIdArray.size() ; i++) {
+            var clientEvents = $("#calendar").fullCalendar('clientEvents', courseIdArray.get(i));
+            if (clientEvents.length > 0) {
+                var event = clientEvents[0];
+                event.showRoom = false;
+                $("#calendar").fullCalendar('updateEvent', event);
+            }
+        }
+    } else if ("lesson" == eventFlag) {
+        
+        if (gloLessonCourseIdHash.containsKey(id)) {
+            var courseIdArray = gloLessonCourseIdHash.get(id);
+            for (var i = 0; i < courseIdArray.size() ; i++) {
+                $('#calendar').fullCalendar('removeEvents', courseIdArray.get(i));
+            }
+        }
     }
-    $('#calendar').fullCalendar('removeEvents', id);
+    
     droppable();
 }
 
@@ -509,7 +631,7 @@ function addRoomBtnClick() {
     $("#roomTable tr:not(:first-child)").remove();
     for (var i = 0; i < gloRooms.length; i++) {
         if (!gloSelectRoomHash.containsKey(gloRooms[i].id)) {
-            str = '<tr><td><input type="checkbox"  value="' + gloRooms[i].id + '"></td><td>' + gloRooms[i].name + '</td><td></td></tr>';
+            str = '<tr><td><input type="checkbox"  value="' + gloRooms[i].id + '"></td><td>' + gloRooms[i].name + '</td><td>' + gloRooms[i].school+ '</td></tr>';
             $("#roomTable tbody").append(str);
         }
     }
@@ -529,20 +651,16 @@ function addLessonBtnClick() {
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-function addCourse(date, startTime, endTime, teacherId, roomId, lessonId, school) {
+function addCourse(date, startTime, endTime, teacherId, roomId, lessonId) {
     var current = moment(date);
     var course = Course.createNew();
     course.id = $.newguid();
     course.day = current.format(gloDateFormat).toString();
     course.start = getEventTime(current.format(gloDateFormat).toString(), startTime);
-    course.end = getEventTime(current.format(gloDateFormat).toString(), endTime);
-    course.school = school;
+    course.end = getEventTime(current.format(gloDateFormat).toString(), endTime);    
     gloCourseHash.add(course.id, course);
     gloCourses.push(course);
 
-    var teacherColor = ""
-    var roomColor = "";
-    var lessonColor = "";
     if ("0" != teacherId) {
         course.teacherId = teacherId;
         var teacher = null;
@@ -556,16 +674,15 @@ function addCourse(date, startTime, endTime, teacherId, roomId, lessonId, school
             //add teacher to dom
             addTeacherToDom(teacher);
         }
-        teacherColor = teacher.color;
 
         var teacherCourseArray = null;
-        if (gloTeacherCourseHash.containsKey(teacherId)) {
-            teacherCourseArray = gloTeacherCourseHash.get(teacherId);
+        if (gloTeacherCourseIdHash.containsKey(teacherId)) {
+            teacherCourseArray = gloTeacherCourseIdHash.get(teacherId);
         } else {
-            teacherCourseArray = new Array();
-            gloTeacherCourseHash.add(teacherId, teacherCourseArray);
+            teacherCourseArray = new jQuery.uniqueArray();
+            gloTeacherCourseIdHash.add(teacherId, teacherCourseArray);
         }
-        teacherCourseArray.push(course);
+        teacherCourseArray.add(course.id);
     }
 
     if ("0" != roomId) {
@@ -581,16 +698,15 @@ function addCourse(date, startTime, endTime, teacherId, roomId, lessonId, school
             //add teacher to dom
             addRoomToDom(room);
         }
-        roomColor = room.color;
 
         var roomCourseArray = null;
-        if (gloRoomCourseHash.containsKey(roomId)) {
-            roomCourseArray = gloRoomCourseHash.get(roomId);
+        if (gloRoomCourseIdHash.containsKey(roomId)) {
+            roomCourseArray = gloRoomCourseIdHash.get(roomId);
         } else {
-            roomCourseArray = new Array();
-            gloRoomCourseHash.add(roomId, roomCourseArray);
+            roomCourseArray = new jQuery.uniqueArray()
+            gloRoomCourseIdHash.add(roomId, roomCourseArray);
         }
-        roomCourseArray.push(course);
+        roomCourseArray.add(course);
     }
 
     if ("0" != lessonId) {
@@ -606,22 +722,18 @@ function addCourse(date, startTime, endTime, teacherId, roomId, lessonId, school
             //add teacher to dom
             addLessonToDom(lesson);
         }
-        lessonColor = lesson.color;
 
         var lessonCourseArray = null;
-        if (gloLessonCourseHash.containsKey(lessonId)) {
-            lessonCourseArray = gloLessonCourseHash.get(lessonId);
+        if (gloLessonCourseIdHash.containsKey(lessonId)) {
+            lessonCourseArray = gloLessonCourseIdHash.get(lessonId);
         } else {
-            lessonCourseArray = new Array();
-            gloLessonCourseHash.add(lessonId, lessonCourseArray);
+            lessonCourseArray = new jQuery.uniqueArray();
+            gloLessonCourseIdHash.add(lessonId, lessonCourseArray);
         }
-        lessonCourseArray.push(course);
+        lessonCourseArray.add(course);
     }
 
     var event = createNewEventByCourse(course);
-    event.teacherColor = teacherColor;
-    event.roomColor = roomColor;
-    event.lessonColor = lessonColor;
     return event;   
 }
 
@@ -638,8 +750,6 @@ function addCourses() {
     var endTime2 = $("#addCourseEndTime2").val();
     var startTime3 = $("#addCourseStartTime3").val();
     var endTime3 = $("#addCourseEndTime3").val();
-
-    var school = $("#addCourseSchool").val();
 
     if ('' == beginDate || '' == endDate) {
         alert("请选择日期");
@@ -689,7 +799,7 @@ function addCourses() {
     if (endDate.diff(beginDate, "days") == 0) {
         for (var j = 0; j < courseTimeArray.size() ; j++) {
             var courseTime = courseTimeArray.get(j);
-            var event = addCourse(beginDate, courseTime.startTime, courseTime.endTime, teacherId, roomId, lessonId, school);
+            var event = addCourse(beginDate, courseTime.startTime, courseTime.endTime, teacherId, roomId, lessonId);
             eventArray.push(event);
         }
     } else {
@@ -705,7 +815,7 @@ function addCourses() {
             if (weekArray.indexOf(day.weekday()) > -1) {
                 for (var j = 0; j < courseTimeArray.size() ; j++) {
                     var courseTime = courseTimeArray.get(j);
-                    var event = addCourse(day, courseTime.startTime, courseTime.endTime, teacherId, roomId, lessonId, school);
+                    var event = addCourse(day, courseTime.startTime, courseTime.endTime, teacherId, roomId, lessonId);
                     eventArray.push(event);
                 }
             }
@@ -788,13 +898,13 @@ function getColorForLesson() {
 function addTeacherToDom(teacher) {
     if (null != teacher) {
         var str = '\
-                    <div> \
+                    <div class="teacherdom' + teacher.id + '"> \
                         <span><input type="checkbox" onclick="teacherSelected(this);" value="' + teacher.id + '" /></span> \
                         <span class="teachername draggable" name="teacher' + teacher.id + '">' + teacher.name + '</span><span class="teachername">&nbsp;</span><span class="teachername">0</span> \
                         <span> \
                             <select class="colorselect" onchange="teacherColorChange(this, \'' + teacher.id + '\');"> ' + getColorDom(teacher) + ' </select> \
                         </span> \
-                        <span>×</span> \
+                        <span class="removeteacher" onclick="removeTeacher(\'' + teacher.id + '\')">×</span> \
                         <span><a onclick="teacherDetail(this, \'' + teacher.id + '\');">详细</a></span> \
                     </div>';
         $("#teacherListDiv").append(str);
@@ -817,41 +927,113 @@ function teacherDetail(_this, teacherId) {
 function addRoomToDom(room) {
     if (null != room) {
         var str = '\
-                    <div> \
+                    <div class="roomdom' + room.id + '"> \
                         <span><input type="checkbox" onclick="roomSelected(this);" value="' + room.id + '" /></span> \
                         <span class="roomname draggable" name="room' + room.id + '">' + room.name + '</span> \
+                        <span>' + room.school + '</span> \
                         <span> \
                             <select class="colorselect" onchange="roomColorChange(this, \'' + room.id + '\');"> ' + getColorDom(room, 'room') + ' </select> \
                         </span> \
-                        <span>×</span> \
+                        <span class="removeroom" onclick="removeRoom(\'' + room.id + '\')">×</span> \
                     </div>';
         $("#roomListDiv").append(str);
     }
 }
 
 function addLessonToDom(lesson) {
-    if (null != lesson) {
-        var str = '\
-                    <div> \
-                        <span></span> \
-                        <span class="lessonname draggable" name="lesson' + lesson.id + '">' + lesson.name + '</span> \
-                        <span> \
-                            <select class="colorselect" onchange="lessonColorChange(this, \'' + lesson.id + '\');"> ' + getColorDom(lesson, 'lesson') + ' </select> \
-                        </span> \
-                        <span>×</span> \
-                    </div>';
-        $("#lessonListDiv").append(str);
+    var str = '\
+                    <tr name="' + lesson.id + '" class="content"> \
+                        <td><input type="checkbox" onclick="lessonSelected(this);" value="' + lesson.id + '" checked="checked" /></td> \
+                        <td><span class="lessonname draggable" name="lesson' + lesson.id + '">' + lesson.name + '</span></td> \
+                        <td><span class="totalhour">'+ lesson.totalHour + '</span></td> \
+                        <td><span class="schedulehour">'+ lesson.scheduleHour + '</span></td> \
+                        <td><img src="images/arrowdown.jpg" class="img" alt="" onclick="toggleDiv(\'' + lesson.id + '\');" /></td> \
+                    </tr> \
+                    <tr  name="' + lesson.id + 'tr" class="hidediv"> \
+                    <td colspan="5"><div class="lessondropdiv" name="' + lesson.id + 'div"></div></td> \
+                    </tr>';
+    $("#lessonListTable").append(str);
+    refreshLessonDropDiv(lesson);
+}
+
+function removeTeacher(teacherId) {
+    if (!gloTeacherCourseIdHash.containsKey(teacherId)) {
+        $(".teacherdom" + teacherId).remove();
+        gloSelectTeacherHash.remove(teacherId);
+    }
+}
+
+function removeRoom(roomId) {
+    if (!gloRoomCourseIdHash.containsKey(roomId)) {
+        $(".roomdom" + roomId).remove();
+        gloSelectRoomHash.remove(roomId);
+    }
+}
+
+function removeLesson(lessonId) {
+    //remove all course and event from current view
+}
+
+
+function refreshLessonDropDiv(lesson) {
+    //compute teacher and teacher hours
+    var teacherHash = new jQuery.hashtable();
+    var roomIdArray = new jQuery.uniqueArray();
+    var courseIdArray = gloLessonCourseIdHash.get(lesson.id);
+    var courseHours = 0;
+    for (var i = 0; i < courseIdArray.size() ; i++) {
+        var course = gloCourseHash.get(courseIdArray.get(i));
+        if ('' != course.teacherId) {
+            if (teacherHash.containsKey(course.teacherId)) {
+                var hours = teacherHash.get(course.teacherId);
+                hours += parseInt(course.hour);
+                courseHours +=  parseInt(course.hour);
+                teacherHash.set(course.teacherId, hours);
+            } else {
+                courseHours += parseInt(course.hour);
+                teacherHash.add(course.teacherId, course.hour)
+            }
+        }        
+        if ('' != course.roomId && !roomIdArray.contains(course.roomId)) {
+            roomIdArray.add(course.roomId)
+        }
+    }
+    var dom = '<select class="colorselect" onchange="lessonColorChange(this, \'' + lesson.id + '\');"> ' + getColorDom(lesson, 'lesson') + ' </select>';
+    dom += '<input type="button" onclick="removeLesson(\'' + lesson.id + '\')" value="删除" />'
+    dom += '<p>教师</p>';
+    for (var i = 0; i < teacherHash.keys.length; i++) {
+        var teacher = gloTeacherHash.get(teacherHash.keys[i]);
+        dom += '<div name="' + teacher.id + '"><span>' + teacher.name + '</span><span>' + teacherHash.get(teacherHash.keys[i]) + '</span></div>';
+    }
+
+    dom += '<p>教室</p>';
+    for (var i = 0; i < roomIdArray.items.length; i++) {
+        dom += '<div name="' + roomIdArray.items[i] + '"><span>' + gloRoomHash.get(roomIdArray.items[i]).name + '</span></div>';
+    }
+    $("#lessonListTable div[name=" + lesson.id + "div]").html(dom);
+    $('tr[name=' + lesson.id+ '] span.schedulehour').html(courseHours);
+}
+
+function toggleDiv(lessonId) {
+    var img = $("#lessonListTable tr[name=" + lessonId + "] img");
+    var tr = $("#lessonListTable tr[name=" + lessonId + "tr]");
+    if (tr.hasClass("hidediv")) {
+        tr.removeClass("hidediv").addClass("showdiv");
+        img.attr("src", "images/arrowup.jpg");
+    } else {
+        tr.removeClass("showdiv").addClass("hidediv");
+        img.attr("src", "images/arrowdown.jpg");
     }
 }
 
 function teacherColorChange(_this, teacherId) {
     var color = $(_this).val();
-    if (gloTeacherCourseHash.containsKey(teacherId)) {
+    if (gloTeacherCourseIdHash.containsKey(teacherId)) {
         var teacher = gloTeacherHash.get(teacherId);
         teacher.color = color;
-        var eventArray = gloTeacherCourseHash.get(teacherId);
-        for (var i = 0; i < eventArray.length; i++) {
-            var clientEvents = $("#calendar").fullCalendar('clientEvents', eventArray[i].id);
+        var courseArray = gloTeacherCourseIdHash.get(teacherId);
+        for (var i = 0; i < courseArray.size() ; i++) {
+            var clientEvents = $("#calendar").fullCalendar('clientEvents', courseArray.get(i));
             if (clientEvents.length > 0) {
                 var event = clientEvents[0];
                 event.teacherColor = color;
@@ -859,7 +1041,7 @@ function teacherColorChange(_this, teacherId) {
             }
         }
     }
-
+    //all teacher events that have the same id with the teacher they are related with.
     if(gloTeacherEventHash.contains(teacherId)) {
         var clientEvents = $("#calendar").fullCalendar('clientEvents', teacherId);
         if (clientEvents.length > 0) {
@@ -876,12 +1058,12 @@ function teacherColorChange(_this, teacherId) {
 
 function roomColorChange(_this, roomId) {    
     var color = $(_this).val();
-    if (gloRoomCourseHash.containsKey(roomId)) {
+    if (gloRoomCourseIdHash.containsKey(roomId)) {
         var room = gloRoomHash.get(roomId);
         room.color = color;
-        var eventArray = gloRoomCourseHash.get(roomId);
-        for (var i = 0; i < eventArray.length; i++) {
-            var clientEvents = $("#calendar").fullCalendar('clientEvents', eventArray[i].id);
+        var courseArray = gloRoomCourseIdHash.get(roomId);
+        for (var i = 0; i < courseArray.size() ; i++) {
+            var clientEvents = $("#calendar").fullCalendar('clientEvents', courseArray.get(i));
             if (clientEvents.length > 0) {
                 var event = clientEvents[0];
                 event.roomColor = color;
@@ -905,12 +1087,12 @@ function roomColorChange(_this, roomId) {
 
 function lessonColorChange(_this, lessonId) {
     var color = $(_this).val();
-    if (gloLessonCourseHash.containsKey(lessonId)) {
+    if (gloLessonCourseIdHash.containsKey(lessonId)) {
         var lesson = gloLessonHash.get(lessonId);
         lesson.color = color;
-        var eventArray = gloLessonCourseHash.get(lessonId);
-        for (var i = 0; i < eventArray.length; i++) {
-            var clientEvents = $("#calendar").fullCalendar('clientEvents', eventArray[i].id);
+        var eventArray = gloLessonCourseIdHash.get(lessonId);
+        for (var i = 0; i < eventArray.size(); i++) {
+            var clientEvents = $("#calendar").fullCalendar('clientEvents', eventArray.get(i));
             if (clientEvents.length > 0) {
                 var event = clientEvents[0];
                 event.lessonColor = color;
@@ -997,7 +1179,7 @@ function showCalendar() {
             center: 'title',
             right: ''
         },
-        events: gloEvents,
+        events: gloInitEvents,
         eventClick: eventClick,
         dayClick: dayClick
     });
@@ -1015,7 +1197,9 @@ function initData() {
     initClassrooms();
     initLessons();
     initCourse();
-    initPageCourseData();
+    for (var i = 0; i < gloCourses.length; i++) {
+        initPageCourseData(i);
+    }
     initEvents();
     initAddCourseDiv();
     initTeacherEvent();
@@ -1023,35 +1207,39 @@ function initData() {
     initTeacherDetailFlag();
 }
 
-function initPageCourseData() {
+function initPageCourseData(index) {
     //
-    gloCourses[0].teacherId = gloTeachers[0].id;
-    gloCourses[0].roomId = gloRooms[0].id;
-    gloCourses[0].lessonId = gloLessons[0].id;
-    var teacherCurseArray = new Array();
-    teacherCurseArray.push(gloCourses[0]);
+    gloCourses[index].teacherId = gloTeachers[index].id;
+    gloCourses[index].roomId = gloRooms[index].id;
+    gloCourses[index].lessonId = gloLessons[index].id;
 
-    var roomCurseArray = new Array();
-    roomCurseArray.push(gloCourses[0]);
+    var teacherCurseArray = new jQuery.uniqueArray();
+    teacherCurseArray.add(gloCourses[index].id);
 
-    var lessonCurseArray = new Array();
-    lessonCurseArray.push(gloCourses[0]);
-    //
-    gloTeacherCourseHash.add(gloTeachers[0].id, teacherCurseArray);
-    gloRoomCourseHash.add(gloRooms[0].id, roomCurseArray);
-    gloLessonCourseHash.add(gloLessons[0].id, lessonCurseArray);
+    var roomCurseArray = new jQuery.uniqueArray();
+    roomCurseArray.add(gloCourses[index].id);
 
-    gloSelectTeacherHash.add(gloTeachers[0].id, gloTeachers[0]);
-    gloSelectRoomHash.add(gloRooms[0].id, gloRooms[0]);
-    gloSelectLessonHash.add(gloLessons[0].id, gloLessons[0]);
-    //init dom
-    gloTeachers[0].color = gloTeacherColorArray[0];
-    gloRooms[0].color = gloRoomColorArray[0];
-    gloLessons[0].color = gloLessonColorArray[0];
+    var lessonCurseArray = new jQuery.uniqueArray();
+    lessonCurseArray.add(gloCourses[index].id);
+    //set up the relationship of course and teacher, room, lesson
+    gloTeacherCourseIdHash.add(gloTeachers[index].id, teacherCurseArray);
+    gloRoomCourseIdHash.add(gloRooms[index].id, roomCurseArray);
+    gloLessonCourseIdHash.add(gloLessons[index].id, lessonCurseArray);
 
-    addTeacherToDom(gloTeachers[0]);
-    addRoomToDom(gloRooms[0]);
-    addLessonToDom(gloLessons[0]);
+    //only init the first course data when initializing
+    if (0 == index) {
+        gloSelectTeacherHash.add(gloTeachers[index].id, gloTeachers[index]);
+        gloSelectRoomHash.add(gloRooms[index].id, gloRooms[index]);
+        gloSelectLessonHash.add(gloLessons[index].id, gloLessons[index]);
+        //init dom
+        gloTeachers[index].color = gloTeacherColorArray[index];
+        gloRooms[index].color = gloRoomColorArray[index];
+        gloLessons[index].color = gloLessonColorArray[index];
+
+        addTeacherToDom(gloTeachers[index]);
+        addRoomToDom(gloRooms[index]);
+        addLessonToDom(gloLessons[index]);
+    }
 }
 
 function initAddCourseDiv() {
@@ -1089,14 +1277,14 @@ function initTeachers() {
 }
 
 function initClassrooms() {
-    var roomStr = '教室一;教室二;教室三;教室四;教室五';
-
+    var roomStr = '教室一,海淀校区;教室二,朝阳校区;教室三,海淀校区;教室四,西城区;教室五,东城区';
     $.each(roomStr.split(";"), function (index, element) {
         if ("" != element) {
             var arr = element.split(",");
             var room = Classroom.createNew();
             room.id = $.newguid();
             room.name = arr[0];
+            room.school = arr[1];
             gloRooms.push(room);
             gloRoomHash.add(room.id, room);
         }
@@ -1104,7 +1292,7 @@ function initClassrooms() {
 }
 
 function initLessons() {
-    var lessonStr = '课程一;课程二;课程三;课程四;课程五';
+    var lessonStr = '物理班一;物理班二;物理班三;物理班四;物理班五';
 
     $.each(lessonStr.split(";"), function (index, element) {
         if ("" != element) {
@@ -1130,7 +1318,6 @@ function initCourse() {
         course.day = date.format(gloDateFormat).toString();
         course.start = getEventTime(course.day, start);
         course.end = getEventTime(course.day, end);
-        course.school = "朝阳分校";
         gloCourses.push(course);
         gloCourseHash.add(course.id, course);
     }
@@ -1140,17 +1327,8 @@ function initEvents() {
     if (gloCourses.length > 0) {
         for (var i = 0; i < gloCourses.length; i++) {
             var event = createNewEventByCourse(gloCourses[i]);
-            if ("" != event.teacherId) {
-                event.teacherColor = gloTeacherHash.get(event.teacherId).color;
-            }
-            if ("" != event.roomId) {
-                event.roomColor = gloRoomHash.get(event.roomId).color;
-            }
-            if ("" != event.lessonId) {
-                event.lessonColor = gloLessonHash.get(event.lessonId).color;
-            }
-            gloEvents.push(event);
-            gloEventHash.add(event.id, event);
+            gloInitEvents.push(event);
+            break;
         }
     }
 }
@@ -1220,7 +1398,21 @@ function createNewEventByCourse(course) {
     event.teacherId = course.teacherId;
     event.roomId = course.roomId;
     event.lessonId = course.lessonId;
-    event.title = course.school;
+    if ('' != course.teacherId) {
+        var teacher = gloTeacherHash.get(course.teacherId);
+        event.teacherColor = teacher.color;
+        event.showTeacher = teacher.show;
+    }
+    if ('' != course.roomId) {
+        var room = gloRoomHash.get(course.roomId);
+        event.roomColor = room.color;
+        event.showRoom = room.show;
+        event.title = room.school;
+    }
+    if ('' != course.lessonId) {
+        var lesson = gloLessonHash.get(course.lessonId);
+        event.lessonColor = lesson.color;
+    }
     return event;
 }
 
@@ -1255,9 +1447,10 @@ var Teacher = {
         teacher.id = 0;
         teacher.name = "";
         teacher.color = "";
-        teacher.span = 0;
+        teacher.hour = 0;
         teacher.flag = 0;
         teacher.content = "";
+        teacher.show = false;
         return teacher;
     }
 }
@@ -1267,7 +1460,9 @@ var Classroom = {
         var classroom = {};
         classroom.id = 0;
         classroom.name = "";
-        classroom.color = "";        
+        classroom.color = "";
+        classroom.school = "";
+        classroom.show = false;
         return classroom;
     }
 }
@@ -1278,6 +1473,9 @@ var Lesson = {
         lesson.id = 0;
         lesson.name = "";
         lesson.color = "";
+        lesson.totalHour = 60;
+        lesson.scheduleHour = 0;
+        lesson.show = false;
         return lesson;
     }
 }
@@ -1292,9 +1490,8 @@ var Course = {
         course.teacherId = "";
         course.roomId = "";
         course.lessonId = "";
-        course.span = 2;
+        course.hour = 2;
         course.flag = '';
-        course.school = '';
         return course;
     }
 }
@@ -1315,6 +1512,8 @@ var Event = {
         event.roomColor = "";
         event.lessonColor = "";
         event.conflict = "";
+        event.showTeacher = false;
+        event.showRoom = false;
         return event;
     }
 }
@@ -1359,16 +1558,19 @@ function removeCoursesPopup() {
         var lessionName = '';
         var teacherName = '';
         var roomName = '';
-        var teacherSpan = '';
+        var teacherHour = 0;
         var teacherFlag = '';
         var teacherContent = '';
+        var date = moment(course.start).format(gloDateFormat).toString();
+        var start = moment(course.start).format(gloDateTimeFormat).toString();
+        var end = moment(course.end).format(gloDateTimeFormat).toString();
         if ('' != course.lessonId) {
             lessionName = gloLessonHash.get(course.lessonId).name;
         }
         if ('' != course.teacherId) {
             var teacher = gloTeacherHash.get(course.teacherId);
             teacherName = teacher.name;
-            teacherSpan = teacher.span;
+            teacherHour = teacher.hour;
             if ('' != teacher.flag && '0' != teacher.flag) {
                 teacherFlag = gloTeacherFlagNameArray[parseInt(teacher.flag) - 1];
             }
@@ -1377,23 +1579,62 @@ function removeCoursesPopup() {
         if ('' != course.roomId) {
             roomName = gloRoomHash.get(course.roomId).name;
         }
-        $("#deleteCourseTable").append('<tr><td><input type="checkbox" value="' + course.id + '" /></td><td>' + moment(course.start).format(gloMomentFormat).toString() + '</td><td>' + moment(course.end).format(gloMomentFormat).toString() + '</td><td>' + lessionName + '</td><td>' + teacherName + '</td><td>' + roomName + '</td><td></td><td>' + teacherFlag + '</td></tr>');
+        $("#deleteCourseTable").append('<tr><td><input type="checkbox" value="' + course.id + '" /></td><td>'+date+'</td><td>' + start + '</td><td>' + end + '</td><td>' + lessionName + '</td><td>' + teacherName + '</td><td>' + roomName + '</td><td>' + teacherHour + '</td><td>' + teacherFlag + '</td></tr>');
     }
     showPopup('deleteCourseDiv');
 }
 
 function removeCourses() {
     var checkboxs = $("#deleteCourseTable").find("input[type=checkbox]:checked");
-    if (checkboxs.length > 0) {
-        checkboxs.each(function () {
-            var courseId = $(this).val();
-            //remove course
-            //remove event
-            //remove teacher hash
-            //remove room hash
-            //remove lesson hash
-        });
+    var idArray = new Array();
+    if (checkboxs.length < 1) {
+        return;
     }
+    //if (checkboxs.length > 0) {
+    //    checkboxs.each(function () {
+    //        var courseId = $(this).val();
+    //        var course = gloCourseHash.get(courseId);
+
+    //        //remove from teacher hash
+    //        if ('' != course.teacherId) {
+    //            var courseArray = gloTeacherCourseIdHash.get(course.teacherId);
+    //            for (var i = 0; i < courseArray.length; i++) {
+    //                if (courseArray[i].id == courseId) {                        
+    //                    courseArray.splice(i, 1);
+    //                }
+    //            }
+    //        }
+    //        //remove from room hash
+    //        if ('' != course.roomId) {
+    //            var courseArray = gloRoomCourseIdHash.get(course.roomId);
+    //            for (var i = 0; i < courseArray.length; i++) {
+    //                if (courseArray[i].id == courseId) {
+    //                    courseArray.splice(i, 1);
+    //                }
+    //            }
+    //        }
+
+    //        if ('' != course.lessonId) {
+    //            var courseArray = gloLessonCourseIdHash.get(course.lessonId);
+    //            for (var i = 0; i < courseArray.length; i++) {
+    //                if (courseArray[i].id == courseId) {
+    //                    courseArray.splice(i, 1);
+    //                }
+    //            }
+    //        }
+    //        //remove course
+    //        for (var i = 0; i < gloCourses.length; i++) {
+    //            if (gloCourses[i].id == courseId) {
+    //                gloCourseHash.remove(courseId)
+    //                gloCourses.splice(i, 1);
+    //            }
+    //        }
+    //        idArray.push(courseId);
+    //    });
+
+    //    //remove from lesson hash
+    //    var clientEvents = $("#calendar").fullCalendar('clientEvents', event.id);
+    //}
     closePopup('deleteCourseDiv');
 }
 

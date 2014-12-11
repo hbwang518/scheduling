@@ -115,10 +115,13 @@
                 appendTo: "#dropDiv"
             });
         }
-        var now = new Date();
-        alert(now.getFullYear() + "--" + now.getMonth() + "--" + now.getDate());
+        //var now = new Date();
+        //alert(now.getFullYear() + "--" + now.getMonth() + "--" + now.getDate());
         //var mom = moment(now.year, now.month, now.day);
     </script>
+    <style>
+        #table td{ border:1px solid black;}
+    </style>
 </head>
 <body>
     <div id="dragDiv" class="dragDiv" style="width:100px;height:200px;border:1px solid red;">
@@ -131,5 +134,17 @@
         </div>
     </div>
     <input type="button" value="test" id="favorites" onclick="test()" />
+
+    <div>
+        <table id="table"  style="border-collapse:collapse;">
+            <tr>
+                <td>选择</td>
+                <td>名称</td>
+                <td>总课时</td>
+                <td>已排课时</td>
+                <td>删除</td>
+            </tr>
+        </table>
+    </div>
 </body>
 </html>

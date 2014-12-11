@@ -5182,17 +5182,36 @@ $.extend(DayGrid.prototype, {
 		if ('' != roomColor) {
 		    roomBgColor = 'background-color:' + roomColor;
 		}
+		var bgTeacherDiv = '<div class="teacherbg" style="' + teacherBgColor + '"></div>';
+		var bgRoomDiv = '</div><div class="roombg" style="' + roomBgColor + '"></div>';
+		var conflictDiv = '';
 
-		var conflictDiv = '<div class="teacherbg" style="' + teacherBgColor + '"></div><div class="roombg" style="' + roomBgColor + '"></div>';
 		var conflict = event.conflict || '';
 		var teacherId = event.teacherId || '';
 		var roomId = event.roomId || '';
 		var lessonId = event.lessonId || '';
-		if ('' == conflict) {
+		var eventfinish = '';
+		var eventclass = event.className || '';
+		var borderColor = '';
+		var lessonColor = event.lessonColor || '';
+		var lessonClass = '';
+
+		if ('' == conflict && 'courseevent' == eventclass) {
 		    if ('' != teacherId && '' != roomId && '' != lessonId) {
-		        conflictDiv += '<div class="eventfinish"></div>';
-		    }		    
+		        eventfinish = 'eventfinish ';
+		        conflictDiv = '';
+		        if (event.showTeacher) {
+		            conflictDiv += bgTeacherDiv;
+		        }
+		        if (event.showRoom) {
+		            conflictDiv += bgRoomDiv;
+		        }
+		    } else {
+		        conflictDiv += bgTeacherDiv + bgRoomDiv;
+		        conflictDiv += '<div class="eventuncomplete"></div>';
+		    }
 		} else {
+		    conflictDiv += bgTeacherDiv + bgRoomDiv;
 		    if (conflict.indexOf('teacher') > -1) {
 		        conflictDiv += '<div class="teacherconflict"></div>';
 		    }
@@ -5202,10 +5221,7 @@ $.extend(DayGrid.prototype, {
 		    }
 		}
 
-		var eventclass = event.className || '';
-		var borderColor = '';
-		var lessonColor = event.lessonColor || '';
-		var lessonClass = '';
+		
 		if ('teacherevent' == eventclass) {
 		    if ('' != teacherId && '' != teacherColor) {
 		        borderColor = 'border-color:' + teacherColor + ';';
@@ -5215,11 +5231,17 @@ $.extend(DayGrid.prototype, {
 		        borderColor = 'border-color:' + roomColor + ';';
 		    }
 		} else if ('' != lessonColor) {
-		    borderColor = 'border-color:' + lessonColor + ';';
+		    if ('' != eventfinish) {
+		        borderColor = 'background-color:' + lessonColor + ';';
+		        borderColor += 'border-color:' + lessonColor + ';';
+		    } else {
+		        borderColor = 'border-color:' + lessonColor + ';';
+		    }
+		    
 		    lessonClass = ' lesson ';
 		}
 		
-		return '<a name="'+event.id+'" class="' + classes.join(' ') + lessonClass + '"' +
+		return '<a name="' + event.id + '" class="' + classes.join(' ') + lessonClass + eventfinish + '"' +
 				(event.url ?
 					' href="' + htmlEscape(event.url) + '"' :
 					''
