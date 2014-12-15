@@ -11094,7 +11094,9 @@ var selectmenu = $.widget( "ui.selectmenu", {
 		close: null,
 		focus: null,
 		open: null,
-		select: null
+		select: null,
+		renderItem: null,  //change by whb
+		renderMenu: null  //change by whb
 	},
 
 	_create: function() {
@@ -11321,7 +11323,11 @@ var selectmenu = $.widget( "ui.selectmenu", {
 		return this.menu;
 	},
 
-	_renderMenu: function( ul, items ) {
+	_renderMenu: function (ul, items) {
+	    if ($.isFunction(this.options.renderMenu)) {  //change by whb
+	        this.options.renderMenu(ul, items);
+	        return;
+	    }
 		var that = this,
 			currentOptgroup = "";
 
@@ -11347,7 +11353,10 @@ var selectmenu = $.widget( "ui.selectmenu", {
 		return this._renderItem( ul, item ).data( "ui-selectmenu-item", item );
 	},
 
-	_renderItem: function( ul, item ) {
+	_renderItem: function (ul, item) {
+	    if ($.isFunction(this.options.renderItem)) { //change by whb
+	        return this.options.renderItem(ul, item);
+	    }	        
 		var li = $( "<li>" );
 
 		if ( item.disabled ) {

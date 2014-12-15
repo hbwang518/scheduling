@@ -295,8 +295,7 @@ function setScheduling() {
     course.start = gloCalEvent.start;
     course.end = gloCalEvent.end;
     course.teacherId = gloCalEvent.teacherId;
-    course.roomId = gloCalEvent.roomId;
-    
+    course.roomId = gloCalEvent.roomId;    
     course.lessonId = gloCalEvent.lessonId;
     
     if ('' != $("#setSchedulingHour").val()) {
@@ -452,7 +451,9 @@ function addLesson() {
                 if ('' != course.roomId && !gloSelectRoomHash.containsKey(course.roomId)) {
                     addRoom(gloRoomHash.get(course.roomId));
                 }
-                eventArray.push(createNewEventByCourse(course));
+                var event = createNewEventByCourse(course);
+                findConflictForEvent(event);
+                eventArray.push(event);
             }
         }
         addLessonToDom(lesson);
@@ -915,6 +916,7 @@ function addTeacherToDom(teacher) {
                         <span><a onclick="teacherDetail(this, \'' + teacher.id + '\');">详细</a></span> \
                     </div>';
         $("#teacherListDiv").append(str);
+        colorSelectSetting("#teacherListDiv .colorselect");
     }
 }
 
@@ -944,6 +946,7 @@ function addRoomToDom(room) {
                         <span class="removeroom" onclick="removeRoom(\'' + room.id + '\')">×</span> \
                     </div>';
         $("#roomListDiv").append(str);
+        colorSelectSetting("#roomListDiv .colorselect");
     }
 }
 
@@ -960,6 +963,7 @@ function addLessonToDom(lesson) {
                     <td colspan="5"><div class="lessondropdiv" name="' + lesson.id + 'div"></div></td> \
                     </tr>';
     $("#lessonListTable").append(str);
+    colorSelectSetting("#lessonListTable .colorselect");
     refreshLessonDropDiv(lesson);
 }
 
@@ -1592,11 +1596,11 @@ function removeCoursesPopup() {
 }
 
 function removeCourses() {
-    var checkboxs = $("#deleteCourseTable").find("input[type=checkbox]:checked");
-    var idArray = new Array();
-    if (checkboxs.length < 1) {
-        return;
-    }
+    //var checkboxs = $("#deleteCourseTable").find("input[type=checkbox]:checked");
+    //var idArray = new Array();
+    //if (checkboxs.length < 1) {
+    //    return;
+    //}
     //if (checkboxs.length > 0) {
     //    checkboxs.each(function () {
     //        var courseId = $(this).val();
@@ -1645,3 +1649,32 @@ function removeCourses() {
     closePopup('deleteCourseDiv');
 }
 
+function colorRenderItem(ul, item) {
+    var li = $('<li style="background-color:' + item.value + '" />');
+    li.appendTo(ul);
+    return li;
+}
+
+function colorControlSelect(event, ui) {
+    $("#" + $(event.target).attr("id") + "-button").css("background-color", ui.item.value);
+    $("#" + $(event.target).attr("id") + "-button .ui-selectmenu-text").html("");
+}
+
+function colorSelectSetting(selector) {
+    var colorSelect = $(selector).selectmenu({
+        renderItem: colorRenderItem,
+        select: colorControlSelect
+    });
+
+    for (var i = 0; i < colorSelect.length; i++) {
+        var val = $("#" + $(colorSelect[i]).attr("id")).val() || '';
+        var colorSpanId = $(colorSelect[i]).attr("id") + "-button";
+        var colorUlId = $(colorSelect[i]).attr("id") + "-menu";
+        if ('' != val) {
+            $("#" + colorSpanId).css("background", val);
+        }
+        $("#" + colorUlId).addClass("color");
+        $("#" + colorSpanId + " .ui-selectmenu-text").html("");
+        $("#" + colorSpanId).height(20);
+    }
+}

@@ -16,6 +16,7 @@
 .lessondropdiv p{margin:5px;}
 #lessonListDiv, #teacherListDiv, #roomListDiv {max-height:135px;overflow-y:auto;}
 .removeteacher, .removeroom{cursor:pointer}
+ul.color li.ui-state-focus {background:none;}
 
 
 /*for calendar control*/
