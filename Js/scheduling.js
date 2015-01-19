@@ -962,8 +962,7 @@ function addLessonToDom(lesson) {
                     <tr  name="' + lesson.id + 'tr" class="hidediv"> \
                     <td colspan="5"><div class="lessondropdiv" name="' + lesson.id + 'div"></div></td> \
                     </tr>';
-    $("#lessonListTable").append(str);
-    colorSelectSetting("#lessonListTable .colorselect");
+    $("#lessonListTable").append(str);    
     refreshLessonDropDiv(lesson);
 }
 
@@ -1022,7 +1021,8 @@ function refreshLessonDropDiv(lesson) {
         dom += '<div name="' + roomIdArray.items[i] + '"><span>' + gloRoomHash.get(roomIdArray.items[i]).name + '</span></div>';
     }
     $("#lessonListTable div[name=" + lesson.id + "div]").html(dom);
-    $('tr[name=' + lesson.id+ '] span.schedulehour').html(courseHours);
+    $('tr[name=' + lesson.id + '] span.schedulehour').html(courseHours);
+    colorSelectSetting("#lessonListTable .colorselect");
 }
 
 function toggleDiv(lessonId) {
@@ -1216,6 +1216,7 @@ function initData() {
     initTeacherEvent();
     initRoomEvent();
     initTeacherDetailFlag();
+    initTimepicker();
 }
 
 function initPageCourseData(index) {
@@ -1444,6 +1445,10 @@ function initMonthPicker() {
     datepicker.css("top", "0px");
     $("#divMonth").append(datepicker);
     $('#hidMonth').monthpicker('show');
+}
+
+function initTimepicker() {
+    $(".time").timepicker(timepickerParam);
 }
 
 function initTeacherDetailFlag() {
@@ -1677,4 +1682,11 @@ function colorSelectSetting(selector) {
         $("#" + colorSpanId + " .ui-selectmenu-text").html("");
         $("#" + colorSpanId).height(20);
     }
+}
+
+var timepickerParam = {
+    'minTime': '08:00',
+    'maxTime': '19:00',
+    timeFormat: 'H:i'
+
 }
